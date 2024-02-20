@@ -39,10 +39,9 @@ server.post('/ws/appointments', (req, res) => {
     const clientOrNull = clients.filter((cl) => cl.doctorId === doctorId);
     const schedule = makeSchedule(req.body);
     schedules.push(schedule);
-    if(clientOrNull.length) {
-        setTimeout(() => {
-            clientOrNull.map((cl) => cl.ws.send(JSON.stringify(schedule)));
-        }, 900);
+    if (clientOrNull.length) {
+        const msg = JSON.stringify(schedule);
+        clientOrNull.map(async (cl) => await cl.ws.send(msg));
     }
     return res.status(200).end();
 });
@@ -69,7 +68,7 @@ wss.on('connection', (ws, req) => {
 
     ws.on('close', () => {
         console.log(`Connection closed: ${doctorId}:${id}`);
-        clients = clients.filter((cl) => cl.doctorId !== doctorId && cl.id !== id);
+        clients = clients.filter((cl) => cl.id !== id);
     });
 
     clients.push({ id, doctorId, ws });

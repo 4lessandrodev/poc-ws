@@ -21,6 +21,7 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		box-sizing: border-box;
 	}
 
 	.hidden {
@@ -66,6 +67,8 @@
 		border-radius: 0.3rem;
 		text-transform: uppercase;
 		background-color: rgb(33, 74, 33);
+		margin-top: 1rem;
+		width: 116%;
 	}
 
 	.loading-container {
@@ -82,10 +85,15 @@
 		list-style: none;
 	}
 
-	#payments {
+	#schedules {
 		list-style: none;
 		margin: 0;
 		padding: 0;
+	}
+
+	.inputs {
+		padding: 1rem;
+		width: 100%;
 	}
 
 	.container {
@@ -104,17 +112,15 @@
 	<form action="http://localhost:4000" method="get" id="form">
 		<div class="hidden loading-container" id="loading">loading...<div class="loading"></div>
 		</div>
-		<input type="text" value="" id="description" placeholder="descrição" style="padding: 1rem; width: 100%;">
-		<input type="text" value="" id="patient" placeholder="paciente" style="padding: 1rem; width: 100%;">
-		<input type="date" value="" id="date" placeholder="2020-01-19" style="padding: 1rem; width: 100%;">
-		<input type="submit" value="agendar" class="submit" id="submit" style="margin-top: 1rem; width: 100%;">
+		<input type="text" value="" id="description" placeholder="descrição" class="inputs">
+		<input type="text" value="" id="patient" placeholder="paciente" class="inputs">
+		<input type="date" value="" id="date" placeholder="2020-01-19" class="inputs">
+		<input type="submit" value="agendar" class="submit" id="submit">
 	</form>
 
 	<div class="container">
 		<h1>Agendamentos:</h1>
-		<ul id="schedules">
-
-		</ul>
+		<ul id="schedules"></ul>
 	</div>
 	<script>
 		const form = document.getElementById('form');
@@ -125,13 +131,17 @@
 		const agendamentos = document.getElementById('schedules');
 		const descriptionEl = document.getElementById('description');
 
-		fetch('http://localhost:4000/appointments').then((e) => e.json().then((data) => {
-			let el = '';
-			data.schedules.map((sc) => {
-				el = el + `<li class="item">${sc.id} | ${sc.date} | ${sc.description} | ${sc.patient}</li>`;
-			});
-			agendamentos.innerHTML = el;
-		})).catch(console.error);
+		fetch('http://localhost:4000/appointments')
+			.then(
+				(e) => e.json()
+					.then((data) => {
+						let el = '';
+						data.schedules.map((sc) => {
+							el = el + `<li class="item">${sc.id} | ${sc.date} | ${sc.description} | ${sc.patient}</li>`;
+						});
+						agendamentos.innerHTML = el;
+					}))
+			.catch(console.error);
 
 		form.addEventListener('submit', function (event) {
 			event.preventDefault();
@@ -148,11 +158,12 @@
 					'Content-Type': 'application/json',
 					'socket-id': socketId
 				}
-			}).catch((e) => {
-				loading.classList.add('hidden');
-				alert(e.message);
-				form.reset();
-			});
+			})
+				.catch((e) => {
+					loading.classList.add('hidden');
+					alert(e.message);
+					form.reset();
+				});
 		});
 
 		const ws = new WebSocket('ws://localhost:8080?doctor=631');
@@ -160,7 +171,6 @@
 		ws.onopen = function () {
 			console.log('WebSocket connection established.');
 		};
-
 
 		ws.onmessage = function (event) {
 			const oldAgendamentos = agendamentos.innerHTML;
@@ -186,5 +196,4 @@
 
 	</script>
 </body>
-
 </html>
