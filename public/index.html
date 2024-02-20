@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Agendamentos</title>
+</head>
+<style>
+	body {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		background-color: #ededed;
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.hidden {
+		display: none;
+	}
+
+	@keyframes spCircRot {
+		from {
+			transform: rotate(0deg);
+		}
+
+		to {
+			transform: rotate(359deg);
+		}
+	}
+
+	.loading {
+		margin: 0.5rem;
+		display: flex;
+		height: 4rem;
+		width: 4rem;
+		border-radius: 50%;
+		border: 0.5rem solid rgb(38, 50, 141);
+		animation: spCircRot .6s infinite linear;
+	}
+
+
+	.loading::after {
+		content: '*';
+		font-weight: bold;
+		color: beige;
+	}
+
+	.submit {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 1rem 3rem;
+		font-weight: 1.3rem;
+		font-weight: bold;
+		color: white;
+		border: none;
+		border-radius: 0.3rem;
+		text-transform: uppercase;
+		background-color: rgb(33, 74, 33);
+	}
+
+	.loading-container {
+		text-align: center;
+	}
+
+	.item {
+		font-weight: bold;
+		font-size: 1.3rem;
+		padding: 0.5rem;
+		border: 0.2rem solid rgb(167, 167, 224);
+		background-color: rgb(184, 184, 205);
+		margin: 0.2rem;
+		list-style: none;
+	}
+
+	#payments {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.container {
+		display: flex;
+		flex-direction: column;
+		max-width: 90%;
+		min-width: 90%;
+		background-color: white;
+		margin: 1rem;
+		padding: 0.5rem;
+	}
+</style>
+
+<body>
+	<h1>Agendamento:</h1>
+	<form action="http://localhost:4000" method="get" id="form">
+		<div class="hidden loading-container" id="loading">loading...<div class="loading"></div>
+		</div>
+		<input type="text" value="" id="description" placeholder="descrição" style="padding: 1rem; width: 100%;">
+		<input type="text" value="" id="patient" placeholder="paciente" style="padding: 1rem; width: 100%;">
+		<input type="date" value="" id="date" placeholder="2020-01-19" style="padding: 1rem; width: 100%;">
+		<input type="submit" value="agendar" class="submit" id="submit" style="margin-top: 1rem; width: 100%;">
+	</form>
+
+	<div class="container">
+		<h1>Agendamentos:</h1>
+		<ul id="schedules">
+
+		</ul>
+	</div>
+	<script>
+		const form = document.getElementById('form');
+		const submit = document.getElementById('submit');
+		const loading = document.getElementById('loading');
+		const patientEl = document.getElementById('patient');
+		const dateEl = document.getElementById('date');
+		const agendamentos = document.getElementById('schedules');
+		const descriptionEl = document.getElementById('description');
+
+		fetch('http://localhost:4000/appointments').then((e) => e.json().then((data) => {
+			let el = '';
+			data.schedules.map((sc) => {
+				el = el + `<li class="item">${sc.id} | ${sc.date} | ${sc.description} | ${sc.patient}</li>`;
+			});
+			agendamentos.innerHTML = el;
+		})).catch(console.error);
+
+		form.addEventListener('submit', function (event) {
+			event.preventDefault();
+			loading.classList.remove('hidden');
+			const socketId = localStorage.getItem('socketId');
+			fetch('http://localhost:4000/ws/appointments', {
+				method: 'POST',
+				body: JSON.stringify({
+					patient: patientEl.value,
+					date: dateEl.value,
+					description: descriptionEl.value
+				}),
+				headers: {
+					'Content-Type': 'application/json',
+					'socket-id': socketId
+				}
+			}).catch((e) => {
+				loading.classList.add('hidden');
+				alert(e.message);
+				form.reset();
+			});
+		});
+
+		const ws = new WebSocket('ws://localhost:8080?doctor=631');
+
+		ws.onopen = function () {
+			console.log('WebSocket connection established.');
+		};
+
+
+		ws.onmessage = function (event) {
+			const oldAgendamentos = agendamentos.innerHTML;
+			const data = JSON.parse(event.data);
+			if (data.doctorId) {
+				console.log('websocket connected: ' + data.doctorId);
+				localStorage.setItem('socketId', data.doctorId);
+			} else {
+				console.log({ webSocketMsg: data });
+				agendamentos.innerHTML = oldAgendamentos + `<li class="item">${data.id} | ${data.date} | ${data.description} | ${data.patient}</li>`;
+				loading.classList.add('hidden');
+				form.reset();
+			}
+		};
+
+		ws.onerror = function (error) {
+			console.error('WebSocket error:', error);
+		};
+
+		ws.onclose = function (event) {
+			console.log('WebSocket connection closed:', event);
+		};
+
+	</script>
+</body>
+
+</html>
