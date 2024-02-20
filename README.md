@@ -47,3 +47,7 @@ Para checar a api
 curl --location 'http://localhost:4000/health-check'
 
 ```
+
+Abra a página html em
+
+http://localhost:4000
