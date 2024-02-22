@@ -2,12 +2,33 @@ const Ws = require('ws');
 const Server = require('express');
 const cors = require('cors');
 var clients = [];
+const morgan = require('morgan');
+const { appendFileSync } = require('fs');
 const path = require('path');
 
 const server = Server();
 const wss = new Ws.WebSocketServer({ port: 8080 });
 const schedules = [];
+const makeStats = (duration, path, method, memoryUsed) => {
+    const memoryUsage = process.memoryUsage();
 
+    const stats = {
+        date: new Date().toISOString(),
+        request: {
+            route: path,
+            method: method,
+            duration: `${duration.toFixed(2)}ms`
+        },
+        memoryUsage: {
+            heapTotal: `${(memoryUsage.heapTotal / (1024 * 1024)).toFixed(2)}mb`,
+            heapUsed: `${(memoryUsage.heapUsed / (1024 * 1024)).toFixed(2)}mb`,
+            memoryUsed: `${(memoryUsed / (1024 * 1024)).toFixed(2)}mb`
+        }
+    };
+    appendFileSync('stats', JSON.stringify(stats) + ',\n', 'utf8');
+}
+
+server.use(morgan('combined'));
 server.use(Server.json());
 server.use(cors({ origin: '*' }));
 
@@ -21,6 +42,17 @@ const makeSchedule = (data) => ({
 server.set('engine', 'html');
 server.set('static', 'public');
 server.set('view engine', 'html');
+server.use((req, res, next) => {
+    const startMemory = process.memoryUsage().heapUsed;
+    const start = performance.now();
+    res.on('finish', () => {
+        const end = performance.now();
+        const endMemory = process.memoryUsage().heapUsed;
+        makeStats((end - start), req.path, req.method.toUpperCase(), (endMemory - startMemory));
+    });
+    next();
+});
+
 server.get('/', (req, res) => {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -43,6 +75,7 @@ server.post('/ws/appointments', (req, res) => {
         const msg = JSON.stringify(schedule);
         clientOrNull.map(async (cl) => await cl.ws.send(msg));
     }
+    let i = 0; while (i < 1e9) { i++ };
     return res.status(200).end();
 });
 

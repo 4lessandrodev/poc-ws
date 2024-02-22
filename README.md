@@ -26,6 +26,10 @@ pnpm install
 
 npm start
 
+# ou
+
+npm run monit
+
 ```
 
 O servidor da api iniciará em: 
