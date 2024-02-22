@@ -37,7 +37,7 @@ O servidor da api iniciará em:
 ```sh
 
 # Api Servidor http
-https://localhost:4000
+http://localhost:4000
 
 # Websocket
 http://localhost:8080
