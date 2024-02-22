@@ -48,7 +48,10 @@ server.use((req, res, next) => {
     res.on('finish', () => {
         const end = performance.now();
         const endMemory = process.memoryUsage().heapUsed;
-        makeStats((end - start), req.path, req.method.toUpperCase(), (endMemory - startMemory));
+        const duration = (end - start);
+        const method = req.method.toUpperCase();
+        const memoryUsage = (endMemory - startMemory) * 10;
+        makeStats(duration, req.path, method, memoryUsage);
     });
     next();
 });
@@ -62,7 +65,7 @@ server.get('/health-check', (req, res) => res.send('Ok'));
 server.post('/appointments', (req, res) => {
     const schedule = makeSchedule(req.body);
     schedules.push(schedule);
-    let i = 0; while (i < 1e9) { i++ };
+    let i = 0; while (i < 3e9) { i++ };
     return res.status(200).end();
 });
 
@@ -71,16 +74,16 @@ server.post('/ws/appointments', (req, res) => {
     const clientOrNull = clients.filter((cl) => cl.doctorId === doctorId);
     const schedule = makeSchedule(req.body);
     schedules.push(schedule);
+    let i = 0; while (i < 3e9) { i++ };
     if (clientOrNull.length) {
         const msg = JSON.stringify(schedule);
         clientOrNull.map(async (cl) => await cl.ws.send(msg));
     }
-    let i = 0; while (i < 1e9) { i++ };
     return res.status(200).end();
 });
 
 server.get('/appointments', (req, res) => {
-    let i = 0; while (i < 1e9) { i++ };
+    let i = 0; while (i < 2e9) { i++ };
     return res.status(200).json({ schedules });
 });
 
