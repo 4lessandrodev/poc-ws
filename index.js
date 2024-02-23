@@ -3,58 +3,26 @@ const Server = require('express');
 const cors = require('cors');
 var clients = [];
 const morgan = require('morgan');
-const { appendFileSync } = require('fs');
 const path = require('path');
-
+const interceptStatistics = require('./statistics.middleware');
+const makeSchedule = require('./make-schedule');
+const repository = require('./schedules');
+const EventEmitter = require('events');
+const onCreateSchedule = require('./on-create-schedule.event');
 const server = Server();
 const wss = new Ws.WebSocketServer({ port: 8080 });
 const schedules = [];
-const makeStats = (duration, path, method, memoryUsed) => {
-    const memoryUsage = process.memoryUsage();
-
-    const stats = {
-        date: new Date().toISOString(),
-        request: {
-            route: path,
-            method: method,
-            duration: `${duration.toFixed(2)}ms`
-        },
-        memoryUsage: {
-            heapTotal: `${(memoryUsage.heapTotal / (1024 * 1024)).toFixed(2)}mb`,
-            heapUsed: `${(memoryUsage.heapUsed / (1024 * 1024)).toFixed(2)}mb`,
-            memoryUsed: `${(memoryUsed / (1024 * 1024)).toFixed(2)}mb`
-        }
-    };
-    appendFileSync('stats', JSON.stringify(stats) + ',\n', 'utf8');
-}
 
 server.use(morgan('combined'));
 server.use(Server.json());
 server.use(cors({ origin: '*' }));
 
-const makeSchedule = (data) => ({
-    id: schedules.length + 1,
-    date: data.date ?? new Date().toISOString(),
-    description: data.description ?? 'testing ' + Math.trunc(Math.random() * 100),
-    patient: data.patient ?? 'anonymous ' + Math.trunc(Math.random() * 100),
-});
-
 server.set('engine', 'html');
 server.set('static', 'public');
 server.set('view engine', 'html');
-server.use((req, res, next) => {
-    const startMemory = process.memoryUsage().heapUsed;
-    const start = performance.now();
-    res.on('finish', () => {
-        const end = performance.now();
-        const endMemory = process.memoryUsage().heapUsed;
-        const duration = (end - start);
-        const method = req.method.toUpperCase();
-        const memoryUsage = (endMemory - startMemory) * 10;
-        makeStats(duration, req.path, method, memoryUsage);
-    });
-    next();
-});
+server.use(interceptStatistics);
+const emitter = new EventEmitter();
+emitter.on('schedule.created', onCreateSchedule);
 
 server.get('/', (req, res) => {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -63,22 +31,16 @@ server.get('/', (req, res) => {
 server.get('/health-check', (req, res) => res.send('Ok'));
 
 server.post('/appointments', (req, res) => {
-    const schedule = makeSchedule(req.body);
-    schedules.push(schedule);
-    let i = 0; while (i < 3e9) { i++ };
+    const schedule = makeSchedule(req.body, schedules);
+    repository.saveSchedule(schedule, schedules);
     return res.status(200).end();
 });
 
 server.post('/ws/appointments', (req, res) => {
     const doctorId = req.headers['socket-id'] ?? '';
-    const clientOrNull = clients.filter((cl) => cl.doctorId === doctorId);
-    const schedule = makeSchedule(req.body);
-    schedules.push(schedule);
-    let i = 0; while (i < 3e9) { i++ };
-    if (clientOrNull.length) {
-        const msg = JSON.stringify(schedule);
-        clientOrNull.map(async (cl) => await cl.ws.send(msg));
-    }
+    const schedule = makeSchedule(req.body, schedules);
+    repository.saveSchedule(schedule, schedules);
+    emitter.emit('schedule.created', doctorId, schedule, clients);
     return res.status(200).end();
 });
 
@@ -110,7 +72,7 @@ wss.on('connection', (ws, req) => {
     clients.push({ id, doctorId, ws });
 
     setTimeout(() => {
-        ws.send(JSON.stringify({ doctorId }));
+        ws.send(JSON.stringify({ data: { doctorId }, eventName: 'client.connected' }));
     }, 1000);
 });
 

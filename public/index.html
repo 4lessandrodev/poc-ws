@@ -174,13 +174,15 @@
 
 		ws.onmessage = function (event) {
 			const oldAgendamentos = agendamentos.innerHTML;
-			const data = JSON.parse(event.data);
-			if (data.doctorId) {
-				console.log('websocket connected: ' + data.doctorId);
-				localStorage.setItem('socketId', data.doctorId);
-			} else {
-				console.log({ webSocketMsg: data });
-				agendamentos.innerHTML = oldAgendamentos + `<li class="item">${data.id} | ${data.date} | ${data.description} | ${data.patient}</li>`;
+			const event = JSON.parse(event);
+			console.log(event);
+			if (event.eventName === 'client.connected') {
+				console.log('websocket connected: ' + event.data.doctorId);
+				localStorage.setItem('socketId', event.data.doctorId);
+			}
+			if (event.eventName === 'schedule.created') {
+				console.log({ webSocketMsg: event });
+				agendamentos.innerHTML = oldAgendamentos + `<li class="item">${event.data.id} | ${event.data.date} | ${event.data.description} | ${event.data.patient}</li>`;
 				loading.classList.add('hidden');
 				form.reset();
 			}
@@ -196,4 +198,5 @@
 
 	</script>
 </body>
+
 </html>
