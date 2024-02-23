@@ -176,12 +176,12 @@
 			const oldAgendamentos = agendamentos.innerHTML;
 			const event = JSON.parse(wsEvent.data);
 			if (event.eventName === 'client.connected') {
-				console.log('websocket connected: ' + event.data.doctorId);
-				localStorage.setItem('socketId', event.data.doctorId);
+				console.log('websocket connected: ' + event.payload.doctorId);
+				localStorage.setItem('socketId', event.payload.doctorId);
 			}
 			if (event.eventName === 'schedule.created') {
 				console.log({ webSocketMsg: event });
-				agendamentos.innerHTML = oldAgendamentos + `<li class="item">${event.data.id} | ${event.data.date} | ${event.data.description} | ${event.data.patient}</li>`;
+				agendamentos.innerHTML = oldAgendamentos + `<li class="item">${event.payload.id} | ${event.payload.date} | ${event.payload.description} | ${event.payload.patient}</li>`;
 				loading.classList.add('hidden');
 				form.reset();
 			}
