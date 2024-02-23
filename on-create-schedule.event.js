@@ -10,22 +10,22 @@ module.exports = onCreateSchedule = (doctorId, schedule, clients) => {
             client.ws.send(JSON.stringify({ payload: { ...schedule }, eventName: 'schedule.created'}));
         });
 
-        var i = 0; while (i < 1e5) { i++ };
+        var i = 0; while (i < 1e3) { i++ }; // SIMULA REQUEST
         var task1 = 'Criando sessão de video conferencia...';
-        var endMemory = startMemory - process.memoryUsage().heapUsed;
-        var memoryUsed = `${(endMemory / (1024 * 1024)).toFixed(2)}mb`
+        var endMemory = process.memoryUsage().heapUsed - startMemory;
+        var memoryUsed = `${((endMemory / 1024) / 1024).toFixed(5)}mb`
         appendFileSync('stats', JSON.stringify({ date, task: task1, memoryUsed }) + ',\n', 'utf8');
 
-        var i = 0; while (i < 1e5) { i++ };
+        var i = 0; while (i < 1e3) { i++ }; // SIMULA REQUEST
         var task2 = 'Enviando email...';
-        var endMemory = startMemory - process.memoryUsage().heapUsed;
-        var memoryUsed = `${(endMemory / (1024 * 1024)).toFixed(2)}mb`
+        var endMemory = process.memoryUsage().heapUsed - startMemory;
+        var memoryUsed = `${((endMemory / 1024) / 1024).toFixed(5)}mb`
         appendFileSync('stats', JSON.stringify({ date, task: task2, memoryUsed }) + ',\n', 'utf8');
 
-        var i = 0; while (i < 1e5) { i++ };
+        var i = 0; while (i < 1e3) { i++ }; // SIMULA ESCRITA NO BANCO
         var task3 = 'Atualizando agendamento com sessão...';
-        var endMemory = startMemory - process.memoryUsage().heapUsed;
-        var memoryUsed = `${(endMemory / (1024 * 1024)).toFixed(2)}mb`
+        var endMemory = process.memoryUsage().heapUsed - startMemory;
+        var memoryUsed = `${((endMemory / 1024) / 1024).toFixed(5)}mb`
         appendFileSync('stats', JSON.stringify({ date, task: task3, memoryUsed }) + ',\n', 'utf8');
         resolve();
     })

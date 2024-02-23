@@ -45,7 +45,7 @@ server.post('/ws/appointments', (req, res) => {
 });
 
 server.get('/appointments', (req, res) => {
-    let i = 0; while (i < 2e9) { i++ };
+    let i = 0; while (i < 2e9) { i++ }; // SIMULA LEITURA NO BANCO
     return res.status(200).json({ schedules });
 });
 

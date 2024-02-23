@@ -4,4 +4,3 @@ module.exports = makeSchedule = (data, schedules) => ({
     description: data.description ?? 'testing ' + Math.trunc(Math.random() * 100),
     patient: data.patient ?? 'anonymous ' + Math.trunc(Math.random() * 100),
 });
-
