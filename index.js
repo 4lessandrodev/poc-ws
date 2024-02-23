@@ -56,7 +56,7 @@ server.use((err, req, res, next) => {
 
 wss.on('connection', (ws, req) => {
     const url = req.url ?? '';
-    const doctorId = url.slice(url.indexOf("doctor=")) ?? '';
+    const doctorId = url.slice(url.indexOf("doctor=") + 7) ?? '';
     const id = req.headers['sec-websocket-key'] ?? '';
     console.log(`Client connected: ${doctorId}:${id}`);
 
@@ -72,7 +72,7 @@ wss.on('connection', (ws, req) => {
     clients.push({ id, doctorId, ws });
 
     setTimeout(() => {
-        ws.send(JSON.stringify({ data: { doctorId }, eventName: 'client.connected' }));
+        ws.send(JSON.stringify({ payload: { doctorId }, eventName: 'client.connected' }));
     }, 1000);
 });
 

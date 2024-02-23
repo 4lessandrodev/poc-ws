@@ -172,10 +172,9 @@
 			console.log('WebSocket connection established.');
 		};
 
-		ws.onmessage = function (event) {
+		ws.onmessage = function (wsEvent) {
 			const oldAgendamentos = agendamentos.innerHTML;
-			const event = JSON.parse(event);
-			console.log(event);
+			const event = JSON.parse(wsEvent.data);
 			if (event.eventName === 'client.connected') {
 				console.log('websocket connected: ' + event.data.doctorId);
 				localStorage.setItem('socketId', event.data.doctorId);
